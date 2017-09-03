@@ -1,7 +1,6 @@
 package models
 
 import "log"
-import "fmt"
 
 //Site needs comment
 type Site struct {
@@ -47,8 +46,6 @@ func GetSiteByUserID(userID int) (*Site, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		fmt.Printf("%v", grps)
 
 		p.Elements = els
 		p.Groups = grps

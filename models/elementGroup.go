@@ -1,11 +1,13 @@
 package models
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
 )
 
+// GroupStructure saves structure of group elements so front end knows how to add more slides
 type GroupStructure struct {
 	ID      int    `json:"id"`
 	Type    string `json:"type"`
@@ -24,12 +26,11 @@ type ElementGroup struct {
 // GetGroupsByPageID gets all the element groups by page id
 func GetGroupsByPageID(pageID int) ([]*ElementGroup, error) {
 	grps := make([]*ElementGroup, 0)
-	grpstrs := make([]*GroupStructure, 0)
 
 	rows, err := db.Query(`SELECT * 
 						FROM elementgroups 
-						INNER JOIN groupstructures on elementgroups.id = groupstructures.groupid
 						WHERE pageid = $1`, pageID)
+	// INNER JOIN groupstructures on elementgroups.id = groupstructures.groupid
 	if err != nil {
 		return grps, err
 	}
@@ -37,14 +38,21 @@ func GetGroupsByPageID(pageID int) ([]*ElementGroup, error) {
 
 	for rows.Next() {
 		eg := new(ElementGroup)
-		gstr := new(GroupStructure)
+		// str := new(GroupStructure)
 
-		err := rows.Scan(&eg.ID, &eg.PageID, &eg.Name, &gstr.ID, &gstr.Type, &gstr.Amount, &gstr.GroupID)
+		// err := rows.Scan(&eg.ID, &eg.PageID, &eg.Name, &str.ID, &str.Type, &str.Amount, &str.GroupID)
+		err := rows.Scan(&eg.ID, &eg.PageID, &eg.Name)
+
 		if err != nil {
 			log.Fatal(err)
 		}
-		grpstrs = append(grpstrs, gstr)
-		eg.Structure = grpstrs
+		strs, err := getGroupStructuresByElementGroupID(eg.ID)
+		if err != nil {
+			log.Fatal(err)
+			fmt.Println("getgroupstructs fail")
+			return grps, err
+		}
+		eg.Structure = strs
 		grps = append(grps, eg)
 
 	}
@@ -55,6 +63,37 @@ func GetGroupsByPageID(pageID int) ([]*ElementGroup, error) {
 	}
 
 	return grps, nil
+}
+
+func getGroupStructuresByElementGroupID(groupID int) ([]*GroupStructure, error) {
+	strs := make([]*GroupStructure, 0)
+	rows, err := db.Query(`SELECT * 
+							FROM groupstructures 
+							WHERE groupid = $1`, groupID)
+	if err != nil {
+		return strs, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		str := new(GroupStructure)
+
+		err := rows.Scan(&str.ID, &str.Type, &str.Amount, &str.GroupID)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		strs = append(strs, str)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+		return strs, err
+	}
+
+	return strs, nil
+
 }
 
 // CreateNewGroup creates a new group for a page. Returns pagelements and group
@@ -84,7 +123,7 @@ func CreateNewGroup(g *ElementGroup) ([]*Element, *ElementGroup, error) {
 	return pgs, newGroup, nil
 }
 
-// CreateNewStructures
+// CreateNewStructures inserts all structures from group into db
 func CreateNewStructures(gs []*GroupStructure, groupID int) ([]*GroupStructure, error) {
 	ns := make([]*GroupStructure, 0)
 
@@ -120,25 +159,16 @@ func CreateNewStructures(gs []*GroupStructure, groupID int) ([]*GroupStructure, 
 	return gs, nil
 }
 
+// CreateNewPageElementsFromStructure builds page elements from structures of group and inserts into db
 func CreateNewPageElementsFromStructure(gs []*GroupStructure, pageID int) ([]*Element, error) {
 	els := make([]*Element, 0)
-	// elID := new(int)
-	// txn, err := db.Begin()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// 	return els, err
-	// }
-
-	// stmt, err := db.Prepare(`INSERT INTO elements (pageid, groupid, type, sortorder, groupsortorder, name)
-	// 						VALUES ($1, $2, $3, $4, $5, $6)
-	// 						RETURNING id`).Scan(&elID)
 
 	for index, g := range gs {
 		for i := 0; i < g.Amount; i++ {
 			p := new(Element)
 			groupSortOrder := i + index
 			name := strings.Join([]string{g.Type, strconv.Itoa(i)}, "")
-			// _, err := stmt.Exec(pageID, g.GroupID, g.Type, 0, groupSortOrder, name)
+
 			err := db.QueryRow(`INSERT INTO elements (pageid, groupid, type, sortorder, groupsortorder, name)
 			VALUES ($1, $2, $3, $4, $5, $6)
 			RETURNING id, pageid, groupid, groupsortorder, name, type
@@ -147,29 +177,9 @@ func CreateNewPageElementsFromStructure(gs []*GroupStructure, pageID int) ([]*El
 				log.Fatal(err)
 			}
 
-			// pe := Element{
-			// 	PageID:         pageID,
-			// 	GroupID:        g.GroupID,
-			// 	GroupSortOrder: groupSortOrder,
-			// 	Name:           name,
-			// 	Type:           g.Type,
-			// }
-
 			els = append(els, p)
 		}
 	}
-
-	// err = stmt.Close()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// 	return els, err
-	// }
-
-	// err = txn.Commit()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// 	return els, err
-	// }
 
 	return els, nil
 
