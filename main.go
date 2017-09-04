@@ -16,11 +16,17 @@ func main() {
 	models.InitDB("user=Garrett dbname=cms_scratch sslmode=disable")
 
 	router := httprouter.New()
+
 	router.GET("/site", controllers.ShowSiteDetailFunc)
 	router.GET("/site/:siteID", controllers.GetPages)
-	// router.POST("/site/:siteID", controllers.CreateNewPage)
+
+	router.POST("/page/create", controllers.CreatePage)
 	router.POST("/page/update", controllers.UpdatePage)
+	router.POST("/page/delete", controllers.DeletePage)
+
 	router.GET("/site/:siteID/page/:pageID", controllers.GetElements)
+	router.POST("/element/delete", controllers.DeleteElement)
+
 	router.POST("/group/create", controllers.CreateNewGroup)
 
 	c := cors.New(cors.Options{

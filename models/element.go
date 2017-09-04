@@ -50,6 +50,7 @@ func GetElementsByPageID(pageID int) ([]*Element, error) {
 
 //CreateOrUpdateElementIfExists prepares two statements depending on if update succeeded, inserts new page element
 func CreateOrUpdateElementIfExists(els []*Element) (int, error) {
+	fmt.Println("CreateOrUpdateElementIfExists")
 
 	txn, err := db.Begin()
 	if err != nil {
@@ -79,7 +80,13 @@ func CreateOrUpdateElementIfExists(els []*Element) (int, error) {
 			fmt.Println("fail at rows affect")
 			log.Fatal(err)
 		} else if rowCnt == 0 {
+			fmt.Println("inserting elements...")
 			res, err = insStmt.Exec(el.PageID, el.GroupID, el.Type, el.SortOrder, el.GroupSortOrder, el.Name, el.Body, el.ImageURL, el.LinkPath, el.LinkText)
+			if err != nil {
+				fmt.Println("fail inserExec")
+
+				log.Fatal(err)
+			}
 		}
 
 	}
@@ -101,9 +108,25 @@ func CreateOrUpdateElementIfExists(els []*Element) (int, error) {
 	err = txn.Commit()
 	if err != nil {
 		fmt.Println("cpommit")
-
 		log.Fatal(err)
+		return 1, err
 	}
 
 	return 1, nil
+}
+
+//DeleteElement given an id deletes a page element and returns deleted id
+func DeleteElement(id int) (int, int, error) {
+	var elementID int
+	var pageID int
+
+	err := db.QueryRow(`DELETE from elements
+						WHERE id = $1
+						RETURNING id, pageid`, id).Scan(&elementID, &pageID)
+	if err != nil {
+		log.Fatal(err)
+		return elementID, pageID, err
+	}
+
+	return elementID, pageID, nil
 }
