@@ -16,6 +16,8 @@ type Page struct {
 	Template  string          `json:"template"`
 	Elements  []*Element      `json:"elements"`
 	Groups    []*ElementGroup `json:"groups"`
+	// ElementsGroups [][]*Element    `json:"elementsGroups"`
+	ElementsGroups map[int][][]*Element `json:"elementsGroups"`
 }
 
 //GetPagesBySiteID obviously

@@ -23,7 +23,7 @@ type Element struct {
 func GetElementsByPageID(pageID int) ([]*Element, error) {
 	els := make([]*Element, 0)
 
-	rows, err := db.Query("SELECT * FROM elements WHERE pageid = $1", pageID)
+	rows, err := db.Query("SELECT * FROM elements WHERE pageid = $1 ORDER BY groupid", pageID)
 	if err != nil {
 		return els, err
 	}
