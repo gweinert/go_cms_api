@@ -25,7 +25,7 @@ func main() {
 	router.POST("/page/delete", controllers.DeletePage)
 
 	router.GET("/site/:siteID/page/:pageID", controllers.GetElements)
-	router.POST("/element/delete", controllers.DeleteElement)
+	router.POST("/element/delete", controllers.DeleteElements)
 
 	router.POST("/group/create", controllers.CreateNewGroup)
 

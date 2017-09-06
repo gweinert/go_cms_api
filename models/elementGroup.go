@@ -21,6 +21,9 @@ type ElementGroup struct {
 	PageID    int               `json:"pageId"`
 	Name      string            `json:"name"`
 	Structure []*GroupStructure `json:"structure"`
+
+	//temp
+	Elements []*Element `json:"elements"`
 }
 
 // GetGroupsByPageID gets all the element groups by page id
@@ -28,7 +31,7 @@ func GetGroupsByPageID(pageID int) ([]*ElementGroup, error) {
 	grps := make([]*ElementGroup, 0)
 
 	rows, err := db.Query(`SELECT * 
-						FROM elementgroups 
+						FROM elementgroups
 						WHERE pageid = $1`, pageID)
 	// INNER JOIN groupstructures on elementgroups.id = groupstructures.groupid
 	if err != nil {
@@ -183,4 +186,19 @@ func CreateNewPageElementsFromStructure(gs []*GroupStructure, pageID int) ([]*El
 
 	return els, nil
 
+}
+
+func DeleteElementGroupSlide(groupID int, slideIndex int) (int, int, error) {
+	var delGroupID int
+	var delSlideIndex int
+
+	err := db.QueryRow(`DELETE from elements
+						WHERE groupid = $1 AND groupSortOrder = $2
+						RETURNING groupid, groupSortOrder`, groupID, slideIndex).Scan(&delGroupID, &delSlideIndex)
+	if err != nil {
+		log.Fatal(err)
+		return delGroupID, delSlideIndex, err
+	}
+
+	return delGroupID, delSlideIndex, nil
 }

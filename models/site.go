@@ -47,14 +47,16 @@ func GetSiteByUserID(userID int) (*Site, error) {
 			log.Fatal(err)
 		}
 
-		tgs, err := transformGroups(els, grps)
-		if err != nil {
-			return s, err
-		}
+		grps, err = addElementsToGroups(els, grps)
+
+		// tgs, err := transformGroups(els, grps)
+		// if err != nil {
+		// 	return s, err
+		// }
 
 		p.Elements = els
 		p.Groups = grps
-		p.ElementsGroups = tgs
+		// p.ElementsGroups = tgs
 		pgs = append(pgs, p)
 
 	}
@@ -68,46 +70,64 @@ func GetSiteByUserID(userID int) (*Site, error) {
 	return s, nil
 }
 
-func transformGroups(els []*Element, grps []*ElementGroup) (map[int][][]*Element, error) {
-	var slidesPerGroup int
-	slideGroup := make([][]*Element, 0)
-	elsGroups := make(map[int][][]*Element)
+func addElementsToGroups(els []*Element, grps []*ElementGroup) ([]*ElementGroup, error) {
+	for _, g := range grps {
+		gels := make([]*Element, 0)
+		for _, el := range els {
 
-	groupEls := filterElements(els, func(el *Element) bool {
-		return el.GroupID != 0
-	})
+			if el.GroupID == g.ID {
 
-	slides := make([]*Element, 0)
-	for i, el := range groupEls {
-		currentGroup := findByKey(grps, el.GroupID)
-		var slideNum int
-
-		for _, groupEl := range currentGroup.Structure {
-			slidesPerGroup += groupEl.Amount
-		}
-
-		slideNum = i / slidesPerGroup
-		nextSlide := ((i + 1) / slidesPerGroup) > slideNum
-		slides = append(slides, el)
-
-		if nextSlide {
-			slideGroup = append(slideGroup, slides)
-			slides = make([]*Element, 0)
+				gels = append(gels, el)
+			}
 
 		}
 
-		slidesPerGroup = 0
-
-		elsGroups[el.GroupID] = slideGroup
-
-		if (i+1 < len(groupEls)) && groupEls[i+1].GroupID != el.GroupID {
-			slideGroup = make([][]*Element, 0)
-		}
-
+		g.Elements = gels
 	}
-	return elsGroups, nil
 
+	return grps, nil
 }
+
+// func transformGroups(els []*Element, grps []*ElementGroup) (map[int][][]*Element, error) {
+// 	var slidesPerGroup int
+// 	slideGroup := make([][]*Element, 0)
+// 	elsGroups := make(map[int][][]*Element)
+
+// 	groupEls := filterElements(els, func(el *Element) bool {
+// 		return el.GroupID != 0
+// 	})
+
+// 	slides := make([]*Element, 0)
+// 	for i, el := range groupEls {
+// 		currentGroup := findByKey(grps, el.GroupID)
+// 		var slideNum int
+
+// 		for _, groupEl := range currentGroup.Structure {
+// 			slidesPerGroup += groupEl.Amount
+// 		}
+
+// 		slideNum = i / slidesPerGroup
+// 		nextSlide := ((i + 1) / slidesPerGroup) > slideNum
+// 		slides = append(slides, el)
+
+// 		if nextSlide {
+// 			slideGroup = append(slideGroup, slides)
+// 			slides = make([]*Element, 0)
+
+// 		}
+
+// 		slidesPerGroup = 0
+
+// 		elsGroups[el.GroupID] = slideGroup
+
+// 		if (i+1 < len(groupEls)) && groupEls[i+1].GroupID != el.GroupID {
+// 			slideGroup = make([][]*Element, 0)
+// 		}
+
+// 	}
+// 	return elsGroups, nil
+
+// }
 
 func findByKey(grps []*ElementGroup, groupID int) *ElementGroup {
 	group := new(ElementGroup)

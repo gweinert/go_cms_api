@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"log"
+	"strings"
 )
 
 type Element struct {
@@ -19,11 +20,31 @@ type Element struct {
 	LinkText       string `json:"linkText"`
 }
 
+//GetElementsByGroupID returns all elements from group
+func GetElementsByGroupID(groupID int) ([]*Element, error) {
+	els, err := getElementsBy("groupid", groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	return els, nil
+}
+
 //GetElementsByPageID returns all elements on page
 func GetElementsByPageID(pageID int) ([]*Element, error) {
+	els, err := getElementsBy("pageid", pageID)
+	if err != nil {
+		return nil, err
+	}
+
+	return els, nil
+}
+
+func getElementsBy(col string, colVar int) ([]*Element, error) {
 	els := make([]*Element, 0)
 
-	rows, err := db.Query("SELECT * FROM elements WHERE pageid = $1 ORDER BY groupid", pageID)
+	queryStr := strings.Join([]string{"SELECT * FROM elements WHERE", col, "= $1 ORDER BY sortorder"}, " ")
+	rows, err := db.Query(queryStr, colVar)
 	if err != nil {
 		return els, err
 	}
@@ -49,7 +70,7 @@ func GetElementsByPageID(pageID int) ([]*Element, error) {
 }
 
 //CreateOrUpdateElementIfExists prepares two statements depending on if update succeeded, inserts new page element
-func CreateOrUpdateElementIfExists(els []*Element) (int, error) {
+func CreateOrUpdateElementIfExists(els []*Element) ([]*Element, error) {
 	fmt.Println("CreateOrUpdateElementIfExists")
 
 	txn, err := db.Begin()
@@ -81,7 +102,9 @@ func CreateOrUpdateElementIfExists(els []*Element) (int, error) {
 			log.Fatal(err)
 		} else if rowCnt == 0 {
 			fmt.Println("inserting elements...")
-			res, err = insStmt.Exec(el.PageID, el.GroupID, el.Type, el.SortOrder, el.GroupSortOrder, el.Name, el.Body, el.ImageURL, el.LinkPath, el.LinkText)
+
+			// @DEV needs to return ids yo
+			// res, err = insStmt.Exec(el.PageID, el.GroupID, el.Type, el.SortOrder, el.GroupSortOrder, el.Name, el.Body, el.ImageURL, el.LinkPath, el.LinkText)
 			if err != nil {
 				fmt.Println("fail inserExec")
 
@@ -115,18 +138,18 @@ func CreateOrUpdateElementIfExists(els []*Element) (int, error) {
 	return 1, nil
 }
 
-//DeleteElement given an id deletes a page element and returns deleted id
-func DeleteElement(id int) (int, int, error) {
-	var elementID int
-	var pageID int
+//DeleteElements given an array of element ids, deletes page elements and returns array of ids
+func DeleteElements(ids []int) ([]int, error) {
 
-	err := db.QueryRow(`DELETE from elements
-						WHERE id = $1
-						RETURNING id, pageid`, id).Scan(&elementID, &pageID)
-	if err != nil {
-		log.Fatal(err)
-		return elementID, pageID, err
+	stmt, _ := db.Prepare(`DELETE from elements WHERE id = $1`)
+	for _, id := range ids {
+		_, err := stmt.Query(id)
+		if err != nil {
+			log.Fatal(err)
+			fmt.Println("query fail")
+			return nil, err
+		}
 	}
 
-	return elementID, pageID, nil
+	return ids, nil
 }

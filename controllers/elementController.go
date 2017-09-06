@@ -32,15 +32,17 @@ func GetElements(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Fprint(w, string(b))
 }
 
-// type deleteReq struct {
-// 	ID int `json:"id"`
-// }
+type deleteReq struct {
+	GroupID int   `json:"groupId"`
+	IDs     []int `json:"ids"`
+}
 
 // DeleteElement given an id from body, deletes and returns id of deleted element
-func DeleteElement(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func DeleteElements(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	var req = make(map[string]string)
-	var res = make(map[string]int)
+	// var req = make(map[string]string)
+	// ids := make([]int, 0)
+	req := new(deleteReq)
 
 	if r.Body == nil {
 		http.Error(w, "Please send a request body", 400)
@@ -53,20 +55,22 @@ func DeleteElement(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	elementID, err := strconv.Atoi(req["id"])
-	if err != nil {
-		http.Error(w, "Forbidden", 403)
-	}
-	id, pageID, err := model.DeleteElement(elementID)
+	dIds, err := model.DeleteElements(req.IDs)
 	if err != nil {
 		http.Error(w, "server Broke", 500)
 		return
 	}
 
-	res["success"] = 1
-	res["id"] = id
-	res["pageId"] = pageID
-	b, err := json.Marshal(res)
+	resData := struct {
+		Success int   `json:"success"`
+		IDs     []int `json:"ids"`
+		GroupID int   `json:"groupId"`
+	}{
+		Success: 1,
+		IDs:     dIds,
+		GroupID: req.GroupID,
+	}
+	b, err := json.Marshal(resData)
 	if err != nil {
 		http.Error(w, "server Broke", 500)
 		return
@@ -74,3 +78,36 @@ func DeleteElement(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	fmt.Fprint(w, string(b))
 }
+
+// func DeleteGroupSlide(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// 	var req = make(map[string]int)
+// 	var res = make(map[string]int)
+
+// 	if r.Body == nil {
+// 		http.Error(w, "Please send a request body", 400)
+// 		return
+// 	}
+// 	err := json.NewDecoder(r.Body).Decode(&req)
+// 	if err != nil {
+// 		fmt.Println("error json")
+// 		http.Error(w, err.Error(), 400)
+// 		return
+// 	}
+
+// 	delGroupID, delSlideIndex, err := model.DeleteElementGroupSlide(req["groupId"], req["sortOrder"])
+// 	if err != nil {
+// 		http.Error(w, "server Broke", 500)
+// 		return
+// 	}
+
+// 	res["success"] = 1
+// 	res["groupId"] = delGroupID
+// 	res["slideIndex"] = delSlideIndex
+// 	b, err := json.Marshal(res)
+// 	if err != nil {
+// 		http.Error(w, "server Broke", 500)
+// 		return
+// 	}
+
+// 	fmt.Fprint(w, string(b))
+// }
