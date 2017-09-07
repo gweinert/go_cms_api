@@ -72,6 +72,7 @@ func getElementsBy(col string, colVar int) ([]*Element, error) {
 //CreateOrUpdateElementIfExists prepares two statements depending on if update succeeded, inserts new page element
 func CreateOrUpdateElementIfExists(els []*Element) ([]*Element, error) {
 	fmt.Println("CreateOrUpdateElementIfExists")
+	nels := make([]*Element, 0)
 
 	txn, err := db.Begin()
 	if err != nil {
@@ -87,12 +88,12 @@ func CreateOrUpdateElementIfExists(els []*Element) ([]*Element, error) {
 							 `)
 
 	for _, el := range els {
-		fmt.Printf("%v\n", el)
+		ne := new(Element)
+
 		res, err := updStmt.Exec(el.SortOrder, el.GroupSortOrder, el.Name, el.Body, el.ImageURL, el.LinkPath, el.LinkText, el.ID)
 
 		if err != nil {
 			fmt.Println("fail Exec")
-
 			log.Fatal(err)
 		}
 
@@ -101,15 +102,21 @@ func CreateOrUpdateElementIfExists(els []*Element) ([]*Element, error) {
 			fmt.Println("fail at rows affect")
 			log.Fatal(err)
 		} else if rowCnt == 0 {
-			fmt.Println("inserting elements...")
 
-			// @DEV needs to return ids yo
 			// res, err = insStmt.Exec(el.PageID, el.GroupID, el.Type, el.SortOrder, el.GroupSortOrder, el.Name, el.Body, el.ImageURL, el.LinkPath, el.LinkText)
+			err := db.QueryRow(`INSERT INTO elements (pageid, groupid, type, sortorder, groupsortorder, name, body, imageurl, linkpath, linktext)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			RETURNING *`, el.PageID, el.GroupID, el.Type, el.SortOrder, el.GroupSortOrder, el.Name, el.Body, el.ImageURL, el.LinkPath, el.LinkText,
+			).Scan(&ne.ID, &ne.PageID, &ne.GroupID, &ne.SortOrder, &ne.GroupSortOrder, &ne.Name, &ne.Type, &ne.Body, &ne.ImageURL, &ne.LinkPath, &ne.LinkText)
 			if err != nil {
 				fmt.Println("fail inserExec")
 
 				log.Fatal(err)
 			}
+
+			nels = append(nels, ne)
+		} else if rowCnt > 0 {
+			nels = append(nels, el)
 		}
 
 	}
@@ -132,10 +139,10 @@ func CreateOrUpdateElementIfExists(els []*Element) ([]*Element, error) {
 	if err != nil {
 		fmt.Println("cpommit")
 		log.Fatal(err)
-		return 1, err
+		return nels, err
 	}
 
-	return 1, nil
+	return nels, nil
 }
 
 //DeleteElements given an array of element ids, deletes page elements and returns array of ids

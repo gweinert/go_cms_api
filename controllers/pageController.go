@@ -89,13 +89,13 @@ func UpdatePage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	// fmt.Printf("%+v\n", p)
 
-	_, err = model.SavePage(p)
+	pnels, err := model.SavePage(p)
 	if err != nil {
 		http.Error(w, "server Broke", 500)
 		return
 	}
 
-	res := pageSuccess{Success: 1, Data: p}
+	res := pageSuccess{Success: 1, Data: pnels}
 	js, err := json.Marshal(res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

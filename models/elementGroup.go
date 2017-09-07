@@ -202,3 +202,21 @@ func DeleteElementGroupSlide(groupID int, slideIndex int) (int, int, error) {
 
 	return delGroupID, delSlideIndex, nil
 }
+
+func AddElementsToGroups(els []*Element, grps []*ElementGroup) ([]*ElementGroup, error) {
+	for _, g := range grps {
+		gels := make([]*Element, 0)
+		for _, el := range els {
+
+			if el.GroupID == g.ID {
+
+				gels = append(gels, el)
+			}
+
+		}
+
+		g.Elements = gels
+	}
+
+	return grps, nil
+}

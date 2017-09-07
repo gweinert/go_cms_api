@@ -1,7 +1,9 @@
 package models
 
-import "log"
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 //Page used for somethign?
 type Page struct {
@@ -89,7 +91,8 @@ func CreateNewPage(p *Page) (*Page, error) {
 }
 
 //SavePage saves page and all elements and element groups in page. Returns page id on success.
-func SavePage(up *Page) (int, error) {
+func SavePage(up *Page) (*Page, error) {
+	// sup := new(Page)
 	stmt, err := db.Prepare(`UPDATE pages 
 							SET name = $1, path = $2, sortorder = $3 
 							WHERE id = $4 
@@ -109,15 +112,19 @@ func SavePage(up *Page) (int, error) {
 		log.Fatal(err)
 	}
 
-	if len(up.Elements) > 0 {
-		_, err := CreateOrUpdateElementIfExists(up.Elements)
-		if err != nil {
-			fmt.Println("fail at save el")
-			log.Fatal(err)
-		}
+	// if len(up.Elements) > 0 {
+	nels, err := CreateOrUpdateElementIfExists(up.Elements)
+	if err != nil {
+		fmt.Println("fail at save el")
+		log.Fatal(err)
 	}
+
+	grps, err := AddElementsToGroups(nels, up.Groups)
+
+	up.Elements = nels
+	up.Groups = grps
 	log.Printf("ID = %d, affected = %d\n", up.ID, rowCnt)
-	return up.ID, nil
+	return up, nil
 }
 
 //DeletePage delete page and all page elements and page groups related
@@ -131,18 +138,6 @@ func DeletePage(id int) (int, error) {
 		log.Fatal(err)
 		return pageID, err
 	}
-
-	// db.QueryRow(`DELETE from elements WHERE pageid = $1`, id)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// 	return pageID, err
-	// }
-
-	// err = db.QueryRow(`DELETE from elementgroups WHERE pageid = $1`, id).Scan(&groupID)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// 	return pageID, err
-	// }
 
 	return pageID, nil
 }

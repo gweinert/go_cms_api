@@ -1,6 +1,8 @@
 package models
 
-import "log"
+import (
+	"log"
+)
 
 //Site needs comment
 type Site struct {
@@ -47,7 +49,7 @@ func GetSiteByUserID(userID int) (*Site, error) {
 			log.Fatal(err)
 		}
 
-		grps, err = addElementsToGroups(els, grps)
+		grps, err = AddElementsToGroups(els, grps)
 
 		// tgs, err := transformGroups(els, grps)
 		// if err != nil {
@@ -70,23 +72,23 @@ func GetSiteByUserID(userID int) (*Site, error) {
 	return s, nil
 }
 
-func addElementsToGroups(els []*Element, grps []*ElementGroup) ([]*ElementGroup, error) {
-	for _, g := range grps {
-		gels := make([]*Element, 0)
-		for _, el := range els {
+// func addElementsToGroups(els []*Element, grps []*ElementGroup) ([]*ElementGroup, error) {
+// 	for _, g := range grps {
+// 		gels := make([]*Element, 0)
+// 		for _, el := range els {
 
-			if el.GroupID == g.ID {
+// 			if el.GroupID == g.ID {
 
-				gels = append(gels, el)
-			}
+// 				gels = append(gels, el)
+// 			}
 
-		}
+// 		}
 
-		g.Elements = gels
-	}
+// 		g.Elements = gels
+// 	}
 
-	return grps, nil
-}
+// 	return grps, nil
+// }
 
 // func transformGroups(els []*Element, grps []*ElementGroup) (map[int][][]*Element, error) {
 // 	var slidesPerGroup int
