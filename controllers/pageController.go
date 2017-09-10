@@ -144,3 +144,45 @@ func DeletePage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	w.Write(js)
 }
+
+type reqUpdateSortOrder struct {
+	PageID   int `json:"pageId"`
+	NewIndex int `json:"newIndex"`
+}
+
+func UpdatePageSortOrder(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	ru := new(reqUpdateSortOrder)
+
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&ru)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	_, err = model.UpdatePageSortOrder(ru.PageID, ru.NewIndex)
+	if err != nil {
+		http.Error(w, "server Broke", 500)
+		return
+	}
+
+	res := struct {
+		Success  int `json:"success"`
+		PageID   int `json:"pageId"`
+		NewIndex int `json:"newIndex"`
+	}{
+		Success:  1,
+		PageID:   ru.PageID,
+		NewIndex: ru.NewIndex,
+	}
+	b, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(b)
+}

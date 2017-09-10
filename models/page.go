@@ -130,7 +130,6 @@ func SavePage(up *Page) (*Page, error) {
 //DeletePage delete page and all page elements and page groups related
 func DeletePage(id int) (int, error) {
 	var pageID int
-	// var groupID int
 	err := db.QueryRow(`DELETE from pages
 						WHERE id = $1
 						RETURNING id`, id).Scan(&pageID)
@@ -140,4 +139,24 @@ func DeletePage(id int) (int, error) {
 	}
 
 	return pageID, nil
+}
+
+func UpdatePageSortOrder(id int, newIndex int) (int, error) {
+	var oldIndex int
+
+	err := db.QueryRow(`SELECT sortorder from pages WHERE id = $1`, id).Scan(&oldIndex)
+	if err != nil {
+		fmt.Println("fail select query page sort order")
+		return 0, err
+	}
+
+	db.QueryRow(`UPDATE pages
+				SET sortorder = $1
+				WHERE sortorder = $2`, oldIndex, newIndex)
+
+	db.QueryRow(`UPDATE pages
+				SET sortorder = $1
+				WHERE id = $2`, newIndex, id)
+
+	return id, nil
 }

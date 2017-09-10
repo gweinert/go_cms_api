@@ -166,16 +166,17 @@ func CreateNewStructures(gs []*GroupStructure, groupID int) ([]*GroupStructure, 
 func CreateNewPageElementsFromStructure(gs []*GroupStructure, pageID int) ([]*Element, error) {
 	els := make([]*Element, 0)
 
-	for index, g := range gs {
+	for _, g := range gs {
 		for i := 0; i < g.Amount; i++ {
 			p := new(Element)
-			groupSortOrder := i + index
+			// groupSortOrder := (g.Amount - 1) + index
+			// const groupSortOrder = Math.floor(group.elements.length / elementsPerSlide);
 			name := strings.Join([]string{g.Type, strconv.Itoa(i)}, "")
 
 			err := db.QueryRow(`INSERT INTO elements (pageid, groupid, type, sortorder, groupsortorder, name)
 			VALUES ($1, $2, $3, $4, $5, $6)
 			RETURNING id, pageid, groupid, groupsortorder, name, type
-			`, pageID, g.GroupID, g.Type, 0, groupSortOrder, name).Scan(&p.ID, &p.PageID, &p.GroupID, &p.GroupSortOrder, &p.Name, &p.Type)
+			`, pageID, g.GroupID, g.Type, 0, 0, name).Scan(&p.ID, &p.PageID, &p.GroupID, &p.GroupSortOrder, &p.Name, &p.Type)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -188,21 +189,24 @@ func CreateNewPageElementsFromStructure(gs []*GroupStructure, pageID int) ([]*El
 
 }
 
-func DeleteElementGroupSlide(groupID int, slideIndex int) (int, int, error) {
+// DeleteGroup deletes elementgroups and elements and groupstructures related to that group by groupid
+func DeleteGroup(groupID int) (int, error) {
 	var delGroupID int
-	var delSlideIndex int
-
-	err := db.QueryRow(`DELETE from elements
-						WHERE groupid = $1 AND groupSortOrder = $2
-						RETURNING groupid, groupSortOrder`, groupID, slideIndex).Scan(&delGroupID, &delSlideIndex)
+	err := db.QueryRow(`DELETE from elementgroups WHERE id = $1 RETURNING id`, groupID).Scan(&delGroupID)
 	if err != nil {
 		log.Fatal(err)
-		return delGroupID, delSlideIndex, err
+		return delGroupID, err
+	}
+	err = db.QueryRow(`DELETE from elements WHERE groupid = $1 RETURNING groupid`, groupID).Scan(&delGroupID)
+	if err != nil {
+		log.Fatal(err)
+		return delGroupID, err
 	}
 
-	return delGroupID, delSlideIndex, nil
+	return groupID, nil
 }
 
+// AddElementsToGroups adds elements to groups for api
 func AddElementsToGroups(els []*Element, grps []*ElementGroup) ([]*ElementGroup, error) {
 	for _, g := range grps {
 		gels := make([]*Element, 0)

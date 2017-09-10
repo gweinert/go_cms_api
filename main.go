@@ -23,11 +23,16 @@ func main() {
 	router.POST("/page/create", controllers.CreatePage)
 	router.POST("/page/update", controllers.UpdatePage)
 	router.POST("/page/delete", controllers.DeletePage)
+	router.POST("/page/sort-order", controllers.UpdatePageSortOrder)
 
 	router.GET("/site/:siteID/page/:pageID", controllers.GetElements)
 	router.POST("/element/delete", controllers.DeleteElements)
 
 	router.POST("/group/create", controllers.CreateNewGroup)
+	router.POST("/group/delete", controllers.DeleteGroup)
+
+	router.POST("/image/upload", controllers.UploadImage)
+	router.POST("/image/delete", controllers.DeleteImage)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},

@@ -160,3 +160,43 @@ func DeleteElements(ids []int) ([]int, error) {
 
 	return ids, nil
 }
+
+// req.ID, imageURL, req.PageID, req.SortOrder, req.GroupID, res.GroupSortOrder, req.Name
+// SaveImageURL if an element exists, updates that elements image url. If the image doesn't exist inserts new element.
+func SaveImageURL(ID int, URL string, pageID int, sortOrder int, groupID int, groupSortOrder int, name string) (int, error) {
+	var elementID int
+
+	stmt, err := db.Prepare(`UPDATE elements 
+							SET imageurl = $1
+							WHERE id = $2`)
+	if err != nil {
+		log.Fatal(err)
+		return 0, err
+	}
+	res, err := stmt.Exec(URL, ID)
+	if err != nil {
+		log.Fatal(err)
+		return 0, err
+	}
+	rowCnt, err := res.RowsAffected()
+	if err != nil {
+		fmt.Println("fail at rows affect")
+		log.Fatal(err)
+		return 0, err
+	} else if rowCnt == 0 {
+		err := db.QueryRow(`INSERT into elements(imageurl, type, pageid, sortorder, groupid, groupsortorder, name)
+							VALUES($1, $2, $3, $4, $5, $6, $7)
+							RETURNING id`, URL, "image", pageID, sortOrder, groupID, groupSortOrder, name).Scan(&elementID)
+		if err != nil {
+			log.Fatal(err)
+			return 0, err
+		}
+	}
+
+	if elementID == 0 {
+		elementID = ID
+	}
+
+	return elementID, nil
+
+}

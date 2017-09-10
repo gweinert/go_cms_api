@@ -57,3 +57,37 @@ func CreateNewGroup(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 
 	fmt.Fprint(w, string(b))
 }
+
+func DeleteGroup(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	req := make(map[string]int)
+
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	groupID, err := model.DeleteGroup(req["groupId"])
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+
+	resData := struct {
+		Success int `json:"success"`
+		GroupID int `json:"groupId"`
+	}{
+		Success: 1,
+		GroupID: groupID,
+	}
+	b, err := json.Marshal(resData)
+	if err != nil {
+		http.Error(w, "server Broke", 500)
+		return
+	}
+
+	fmt.Fprint(w, string(b))
+}
