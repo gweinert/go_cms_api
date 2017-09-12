@@ -1,7 +1,12 @@
 package models
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
+
+	"github.com/gweinert/cms_scratch/services"
 )
 
 //Site needs comment
@@ -11,6 +16,47 @@ type Site struct {
 	UserID   int     `json:"userId"`
 	DateTime string  `json:"dateTime"`
 	Pages    []*Page `json:"pages"`
+}
+
+func BuildStaticJsonAndUpload(sessionID string) (string, error) {
+
+	user, err := GetUserFromSessionID(sessionID)
+	if err != nil {
+		log.Fatal(err)
+		return "", err
+	}
+
+	site, err := GetSiteByUserID(user.ID)
+	if err != nil {
+		log.Fatal(err)
+		return "", err
+	}
+
+	site, err = transformSite(site) // transform for better as static site
+
+	//create json file and upload to google cloud
+	b, err := json.Marshal(site)
+	if err != nil {
+		fmt.Println("json err:", err)
+		return "", err
+	}
+
+	// buf := bytes.NewBuffer(b)
+	buf := bytes.NewReader(b)
+
+	//dec := base64.NewDecoder(base64.StdEncoding, buf)
+	// bufRead := NewReader(buf)
+
+	bucketName := "garrett-react-cms-test"
+	fileName := "site.json"
+
+	fileURL, err := services.GoogleCloudUpload(buf, bucketName, fileName)
+	if err != nil {
+		log.Fatal(err)
+		return "", err
+	}
+
+	return fileURL, nil
 }
 
 // GetSiteByUserID returns one site based on user id
@@ -130,6 +176,28 @@ func GetSiteByUserID(userID int) (*Site, error) {
 // 	return elsGroups, nil
 
 // }
+
+func transformSite(site *Site) (*Site, error) {
+
+	for _, p := range site.Pages {
+		var elementMap = make(map[string]string)
+		for _, e := range p.Elements {
+			switch e.Type {
+			case "image":
+				elementMap[e.Name] = e.ImageURL
+				break
+			case "link":
+				elementMap[e.Name] = e.LinkPath
+				break
+			default:
+				elementMap[e.Name] = e.Body
+			}
+		}
+		p.ElementMap = elementMap
+	}
+
+	return site, nil
+}
 
 func findByKey(grps []*ElementGroup, groupID int) *ElementGroup {
 	group := new(ElementGroup)

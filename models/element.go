@@ -146,7 +146,7 @@ func CreateOrUpdateElementIfExists(els []*Element) ([]*Element, error) {
 }
 
 //DeleteElements given an array of element ids, deletes page elements and returns array of ids
-func DeleteElements(ids []int) ([]int, error) {
+func DeleteElements(ids []int, groupID int, groupSortOrder int) ([]int, error) {
 
 	stmt, _ := db.Prepare(`DELETE from elements WHERE id = $1`)
 	for _, id := range ids {
@@ -158,7 +158,29 @@ func DeleteElements(ids []int) ([]int, error) {
 		}
 	}
 
+	if groupID != 0 {
+		_, err := updateElementsGroupSortOrder(groupSortOrder, groupID)
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
+	}
+
 	return ids, nil
+}
+
+func updateElementsGroupSortOrder(groupSortOrder int, groupID int) (int, error) {
+	var uGroupID int
+	err := db.QueryRow(`UPDATE elements
+					SET groupsortorder = groupsortorder - 1
+					WHERE groupid = $1 AND groupsortorder > $2
+					RETURNING groupid`, groupID, groupSortOrder).Scan(&uGroupID)
+	if err != nil {
+		log.Fatal(err)
+		return 0, err
+	}
+
+	return uGroupID, nil
 }
 
 // req.ID, imageURL, req.PageID, req.SortOrder, req.GroupID, res.GroupSortOrder, req.Name

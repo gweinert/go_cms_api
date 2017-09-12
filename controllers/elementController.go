@@ -33,15 +33,13 @@ func GetElements(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 type deleteReq struct {
-	GroupID int   `json:"groupId"`
-	IDs     []int `json:"ids"`
+	GroupID        int   `json:"groupId"`
+	GroupSortOrder int   `json:"groupSortOrder"`
+	IDs            []int `json:"ids"`
 }
 
 // DeleteElement given an id from body, deletes and returns id of deleted element
 func DeleteElements(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	// var req = make(map[string]string)
-	// ids := make([]int, 0)
 	req := new(deleteReq)
 
 	if r.Body == nil {
@@ -55,20 +53,22 @@ func DeleteElements(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		return
 	}
 
-	dIds, err := model.DeleteElements(req.IDs)
+	dIds, err := model.DeleteElements(req.IDs, req.GroupID, req.GroupSortOrder)
 	if err != nil {
 		http.Error(w, "server Broke", 500)
 		return
 	}
 
 	resData := struct {
-		Success int   `json:"success"`
-		IDs     []int `json:"ids"`
-		GroupID int   `json:"groupId"`
+		Success        int   `json:"success"`
+		IDs            []int `json:"ids"`
+		GroupID        int   `json:"groupId"`
+		GroupSortOrder int   `json:"groupSortOrder"`
 	}{
-		Success: 1,
-		IDs:     dIds,
-		GroupID: req.GroupID,
+		Success:        1,
+		IDs:            dIds,
+		GroupID:        req.GroupID,
+		GroupSortOrder: req.GroupSortOrder,
 	}
 	b, err := json.Marshal(resData)
 	if err != nil {

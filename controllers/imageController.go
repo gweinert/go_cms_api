@@ -2,22 +2,16 @@ package controllers
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
-	"strings"
 	// "strings"
 
-	"cloud.google.com/go/storage"
-	"google.golang.org/api/option"
-
 	model "github.com/gweinert/cms_scratch/models"
+	"github.com/gweinert/cms_scratch/services"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -93,15 +87,6 @@ func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 func googleCloudUpload(r *uploadReq) (string, error) {
 
-	ctx := context.Background()
-
-	// Creates a client.
-	client, err := storage.NewClient(ctx,
-		option.WithServiceAccountFile("/Users/Garrett/Desktop/react-cms-e5dc3890c619.json"))
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-
 	// Sets the name for the new bucket.
 	bucketName := "garrett-react-cms-test"
 
@@ -111,34 +96,18 @@ func googleCloudUpload(r *uploadReq) (string, error) {
 	dec := base64.NewDecoder(base64.StdEncoding, buf)
 	fileName := r.FileName
 
-	// upload object
-	wc := client.Bucket(bucketName).Object(fileName).NewWriter(ctx)
-	if _, err = io.Copy(wc, dec); err != nil {
-		return "error copying", err
-	}
-	if err := wc.Close(); err != nil {
-		return "error closing", err
-	}
-
-	//make url public
-	acl := client.Bucket(bucketName).Object(fileName).ACL()
-	if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
+	imageURL, err := services.GoogleCloudUpload(dec, bucketName, fileName)
+	if err != nil {
+		log.Fatal(err)
 		return "", err
 	}
-
-	imageURL := strings.Join([]string{
-		"https://storage.googleapis.com/",
-		bucketName,
-		"/",
-		fileName,
-	}, "")
 
 	return imageURL, nil
 }
 
 type deleteImageReq struct {
-	ImageURL string `json:"imageURL"`
-	ID       int    `json:"id"`
+	ImageURLs []string `json:"imageURLs"`
+	IDs       []int    `json:"ids"`
 }
 
 func DeleteImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -155,25 +124,25 @@ func DeleteImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	_, err = GoogleCloudDelete(req.ImageURL)
+	_, err = googleCloudDelete(req.ImageURLs)
 	if err != nil {
 		fmt.Println("error google cloud delete")
 		http.Error(w, err.Error(), 500)
 	}
 
-	ids := []int{req.ID}
-	_, err = model.DeleteElements(ids)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	// ids := []int{req.ID}
+	// _, err = model.DeleteElements(ids)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), 500)
+	// 	return
+	// }
 
 	res := struct {
-		Success int `json:"success"`
-		ID      int `json:"id"`
+		Success int   `json:"success"`
+		ID      []int `json:"id"`
 	}{
 		Success: 1,
-		ID:      req.ID,
+		ID:      req.IDs,
 	}
 
 	b, err := json.Marshal(res)
@@ -185,33 +154,15 @@ func DeleteImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Fprint(w, string(b))
 }
 
-func GoogleCloudDelete(imageURL string) (string, error) {
-	ctx := context.Background()
-
-	// Creates a client.
-	client, err := storage.NewClient(ctx,
-		option.WithServiceAccountFile("/Users/Garrett/Desktop/react-cms-e5dc3890c619.json"))
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-		return "", err
-	}
-
+func googleCloudDelete(imageURLs []string) ([]string, error) {
 	// Sets the name for the new bucket.
 	bucketName := "garrett-react-cms-test"
 
-	// Gets object name from end og image URL
-	fileURL, err := url.Parse(imageURL)
+	imageURLs, err := services.GoogleCloudDelete(bucketName, imageURLs)
 	if err != nil {
-		return "", err
-	}
-	filePath := fileURL.Path
-	filePathArr := strings.Split(filePath, "/")
-	fileName := filePathArr[len(filePathArr)-1]
-
-	o := client.Bucket(bucketName).Object(fileName)
-	if err := o.Delete(ctx); err != nil {
-		return "", err
+		log.Fatal(err)
+		return nil, err
 	}
 
-	return imageURL, nil
+	return imageURLs, nil
 }

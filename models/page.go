@@ -19,7 +19,7 @@ type Page struct {
 	Elements  []*Element      `json:"elements"`
 	Groups    []*ElementGroup `json:"groups"`
 	// ElementsGroups [][]*Element    `json:"elementsGroups"`
-	ElementsGroups map[int][][]*Element `json:"elementsGroups"`
+	ElementMap map[string]string `json:"elementMap"`
 }
 
 //GetPagesBySiteID obviously
@@ -128,17 +128,30 @@ func SavePage(up *Page) (*Page, error) {
 }
 
 //DeletePage delete page and all page elements and page groups related
-func DeletePage(id int) (int, error) {
+func DeletePage(id int) (int, int, int, error) {
 	var pageID int
-	err := db.QueryRow(`DELETE from pages
+	var pageSortOrder int
+	var parentID int
+	// get page about to delete. find sort order of that element and page id and update all sort orders after it
+
+	err := db.QueryRow(`SELECT * from pages 
+						WHERE id = $1 
+						RETURNING pagesortorder, parentid`, id).Scan(&pageSortOrder, &parentID)
+
+	err = db.QueryRow(`UPDATE pages
+						SET sortorder = sortorder - 1
+						WHERE parentid = $1 and sortorder > $2
+						RETURNING id`, parentID, pageSortOrder).Scan(&pageID)
+
+	err = db.QueryRow(`DELETE from pages
 						WHERE id = $1
 						RETURNING id`, id).Scan(&pageID)
 	if err != nil {
 		log.Fatal(err)
-		return pageID, err
+		return 0, 0, 0, err
 	}
 
-	return pageID, nil
+	return pageID, pageSortOrder, parentID, nil
 }
 
 func UpdatePageSortOrder(id int, newIndex int) (int, error) {

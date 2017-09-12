@@ -19,6 +19,7 @@ func main() {
 
 	router.GET("/site", controllers.ShowSiteDetailFunc)
 	router.GET("/site/:siteID", controllers.GetPages)
+	router.POST("/site/publish", controllers.PublishSite)
 
 	router.POST("/page/create", controllers.CreatePage)
 	router.POST("/page/update", controllers.UpdatePage)
@@ -33,6 +34,10 @@ func main() {
 
 	router.POST("/image/upload", controllers.UploadImage)
 	router.POST("/image/delete", controllers.DeleteImage)
+
+	router.POST("/login", controllers.Login)
+	router.POST("/user/session", controllers.GetUserFromSessionID)
+	// router.GET("/login/GUID", controllers.GetGUID)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},

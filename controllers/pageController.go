@@ -102,6 +102,8 @@ func UpdatePage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	// on success build new static file
+
 	w.Write(js)
 
 }
@@ -111,8 +113,10 @@ type reqDelete struct {
 }
 
 type resDelete struct {
-	Success int `json:"success"`
-	ID      int `json:"id"`
+	Success   int `json:"success"`
+	ID        int `json:"id"`
+	SortOrder int `json:"sortOrder"`
+	ParentID  int `json:"parentId"`
 }
 
 func DeletePage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -129,13 +133,13 @@ func DeletePage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	_, err = model.DeletePage(rd.ID)
+	_, pageSortOrder, parentID, err := model.DeletePage(rd.ID)
 	if err != nil {
 		http.Error(w, "server Broke", 500)
 		return
 	}
 
-	res := resDelete{Success: 1, ID: rd.ID}
+	res := resDelete{Success: 1, ID: rd.ID, SortOrder: pageSortOrder, ParentID: parentID}
 	js, err := json.Marshal(res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

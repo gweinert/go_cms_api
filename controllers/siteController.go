@@ -25,3 +25,37 @@ func ShowSiteDetailFunc(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	fmt.Fprint(w, string(b))
 
 }
+
+func PublishSite(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var req = make(map[string]string)
+
+	if r.Body == nil {
+		http.Error(w, "Please send a request body", 400)
+		return
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	fileURL, err := model.BuildStaticJsonAndUpload(req["sessionId"])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resSuccess := struct {
+		Success int    `json:"success"`
+		FileURL string `json:"fileURL"`
+	}{
+		Success: 1,
+		FileURL: fileURL,
+	}
+
+	b, err := json.Marshal(resSuccess)
+	if err != nil {
+		fmt.Println("json err:", err)
+	}
+
+	fmt.Fprint(w, string(b))
+}
