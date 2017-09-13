@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	model "github.com/gweinert/cms_scratch/models"
 	"github.com/julienschmidt/httprouter"
@@ -12,14 +13,29 @@ import (
 
 //ShowSiteDetailFunc needs comment
 func ShowSiteDetailFunc(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	s, err := model.GetSiteByUserID(1)
+	sessionIDCookie, err := r.Cookie("sessionId")
 	if err != nil {
 		log.Fatal(err)
+		http.Error(w, err.Error(), 400)
+	}
+
+	sessionID := sessionIDCookie.Value
+
+	user, err := model.GetUserFromSessionID(sessionID)
+	if err != nil {
+		log.Fatal(err)
+		http.Error(w, err.Error(), 400)
+	}
+
+	s, err := model.GetSiteByUserID(user.ID)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
 	}
 
 	b, err := json.Marshal(s)
 	if err != nil {
 		fmt.Println("json err:", err)
+		http.Error(w, err.Error(), 400)
 	}
 
 	fmt.Fprint(w, string(b))
@@ -27,19 +43,18 @@ func ShowSiteDetailFunc(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 }
 
 func PublishSite(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	var req = make(map[string]string)
-
-	if r.Body == nil {
-		http.Error(w, "Please send a request body", 400)
-		return
-	}
-	err := json.NewDecoder(r.Body).Decode(&req)
+	sessionIDCookie, err := r.Cookie("sessionId")
 	if err != nil {
+		log.Fatal(err)
 		http.Error(w, err.Error(), 400)
-		return
 	}
 
-	fileURL, err := model.BuildStaticJsonAndUpload(req["sessionId"])
+	sessionID := sessionIDCookie.Value
+
+	bucketName := strings.Split(r.Host, ":")[0]
+	bucketName = strings.Join([]string{"garrett-react-cms", bucketName}, "-")
+
+	fileURL, err := model.BuildStaticJsonAndUpload(sessionID, bucketName)
 	if err != nil {
 		log.Fatal(err)
 	}

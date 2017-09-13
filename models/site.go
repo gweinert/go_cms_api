@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/gweinert/cms_scratch/services"
 )
@@ -18,7 +19,7 @@ type Site struct {
 	Pages    []*Page `json:"pages"`
 }
 
-func BuildStaticJsonAndUpload(sessionID string) (string, error) {
+func BuildStaticJsonAndUpload(sessionID string, bucketName string) (string, error) {
 
 	user, err := GetUserFromSessionID(sessionID)
 	if err != nil {
@@ -41,13 +42,7 @@ func BuildStaticJsonAndUpload(sessionID string) (string, error) {
 		return "", err
 	}
 
-	// buf := bytes.NewBuffer(b)
 	buf := bytes.NewReader(b)
-
-	//dec := base64.NewDecoder(base64.StdEncoding, buf)
-	// bufRead := NewReader(buf)
-
-	bucketName := "garrett-react-cms-test"
 	fileName := "site.json"
 
 	fileURL, err := services.GoogleCloudUpload(buf, bucketName, fileName)
@@ -188,6 +183,7 @@ func transformSite(site *Site) (*Site, error) {
 				break
 			case "link":
 				elementMap[e.Name] = e.LinkPath
+				elementMap[strings.Join([]string{e.Name, "Text"}, "")] = e.LinkText
 				break
 			default:
 				elementMap[e.Name] = e.Body

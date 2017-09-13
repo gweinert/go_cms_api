@@ -170,17 +170,34 @@ func DeleteElements(ids []int, groupID int, groupSortOrder int) ([]int, error) {
 }
 
 func updateElementsGroupSortOrder(groupSortOrder int, groupID int) (int, error) {
-	var uGroupID int
-	err := db.QueryRow(`UPDATE elements
-					SET groupsortorder = groupsortorder - 1
-					WHERE groupid = $1 AND groupsortorder > $2
-					RETURNING groupid`, groupID, groupSortOrder).Scan(&uGroupID)
+	// var groupID int
+	// err := db.QueryRow(`UPDATE elements
+	// 				SET groupsortorder = groupsortorder - 1
+	// 				WHERE groupid = $1 AND groupsortorder > $2
+	// 				RETURNING groupid`, groupID, groupSortOrder).Scan(&uGroupID)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// 	return 0, err
+	// }
+	stmt, err := db.Prepare(`UPDATE elements
+						SET groupsortorder = groupsortorder - 1
+		 				WHERE groupid = $1 AND groupsortorder > $2`)
+	if err != nil {
+		log.Fatal(err)
+		return 0, err
+	}
+	res, err := stmt.Exec(groupID, groupSortOrder)
+	if err != nil {
+		log.Fatal(err)
+		return 0, err
+	}
+	_, err = res.RowsAffected()
 	if err != nil {
 		log.Fatal(err)
 		return 0, err
 	}
 
-	return uGroupID, nil
+	return groupID, nil
 }
 
 // req.ID, imageURL, req.PageID, req.SortOrder, req.GroupID, res.GroupSortOrder, req.Name

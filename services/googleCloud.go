@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 
 func GoogleCloudUpload(file io.Reader, bucketName string, fileName string) (string, error) {
 
+	fmt.Println("google bucketname", bucketName)
 	ctx := context.Background()
 
 	// Creates a client.

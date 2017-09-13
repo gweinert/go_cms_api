@@ -94,14 +94,14 @@ func CreateNewPage(p *Page) (*Page, error) {
 func SavePage(up *Page) (*Page, error) {
 	// sup := new(Page)
 	stmt, err := db.Prepare(`UPDATE pages 
-							SET name = $1, path = $2, sortorder = $3 
-							WHERE id = $4 
+							SET name = $1, path = $2, sortorder = $3, template = $4, showinnav = $5
+							WHERE id = $6 
 							RETURNING id;`)
 	if err != nil {
 		fmt.Println("fail at prepare")
 		log.Fatal(err)
 	}
-	res, err := stmt.Exec(up.Name, up.Path, up.SortOrder, up.ID)
+	res, err := stmt.Exec(up.Name, up.Path, up.SortOrder, up.Template, up.ShowInNav, up.ID)
 	if err != nil {
 		fmt.Println("fail at Exec")
 		log.Fatal(err)

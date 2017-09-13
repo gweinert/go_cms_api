@@ -19,25 +19,24 @@ func main() {
 
 	router.GET("/site", controllers.ShowSiteDetailFunc)
 	router.GET("/site/:siteID", controllers.GetPages)
-	router.POST("/site/publish", controllers.PublishSite)
+	router.POST("/site/publish", controllers.BasicAuth(controllers.PublishSite))
 
-	router.POST("/page/create", controllers.CreatePage)
-	router.POST("/page/update", controllers.UpdatePage)
-	router.POST("/page/delete", controllers.DeletePage)
-	router.POST("/page/sort-order", controllers.UpdatePageSortOrder)
+	router.POST("/page/create", controllers.BasicAuth(controllers.CreatePage))
+	router.POST("/page/update", controllers.BasicAuth(controllers.UpdatePage))
+	router.POST("/page/delete", controllers.BasicAuth(controllers.DeletePage))
+	router.POST("/page/sort-order", controllers.BasicAuth(controllers.UpdatePageSortOrder))
 
 	router.GET("/site/:siteID/page/:pageID", controllers.GetElements)
-	router.POST("/element/delete", controllers.DeleteElements)
+	router.POST("/element/delete", controllers.BasicAuth(controllers.DeleteElements))
 
-	router.POST("/group/create", controllers.CreateNewGroup)
-	router.POST("/group/delete", controllers.DeleteGroup)
+	router.POST("/group/create", controllers.BasicAuth(controllers.CreateNewGroup))
+	router.POST("/group/delete", controllers.BasicAuth(controllers.DeleteGroup))
 
-	router.POST("/image/upload", controllers.UploadImage)
-	router.POST("/image/delete", controllers.DeleteImage)
+	router.POST("/image/upload", controllers.BasicAuth(controllers.UploadImage))
+	router.POST("/image/delete", controllers.BasicAuth(controllers.DeleteImage))
 
 	router.POST("/login", controllers.Login)
 	router.POST("/user/session", controllers.GetUserFromSessionID)
-	// router.GET("/login/GUID", controllers.GetGUID)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},

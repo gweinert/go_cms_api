@@ -1,7 +1,9 @@
 package models
 
-import "log"
-import "strings"
+import (
+	"log"
+	"strings"
+)
 
 type User struct {
 	ID           int    `json:"id"`
@@ -71,11 +73,20 @@ func findUserBy(param string, paramValue int) (*User, error) {
 func GetUserFromSessionID(sessionID string) (*User, error) {
 	var userID int
 
-	err := db.QueryRow(`SELECT userid from usersessions 
-						WHERE sessionkey = $1`, sessionID).Scan(&userID)
+	rows, err := db.Query(`SELECT userid from usersessions 
+						WHERE sessionkey = $1`, sessionID)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(&userID); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
 	}
 
 	user, err := FindUserByID(userID)

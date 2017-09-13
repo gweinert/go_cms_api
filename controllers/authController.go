@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	model "github.com/gweinert/cms_scratch/models"
@@ -21,12 +22,24 @@ import (
 // 	fmt.Fprint(w, string(b))
 // }
 
-func BasicAuth(h httprouter.Handle, requiredUser, requiredPassword string) httprouter.Handle {
+func BasicAuth(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// Get the Basic Authentication credentials
-		user, password, hasAuth := r.BasicAuth()
+		// user, password, hasAuth := r.BasicAuth()
+		sessionIDCookie, err := r.Cookie("sessionId")
+		if err != nil {
+			log.Fatal(err)
+			http.Error(w, err.Error(), 400)
+		}
 
-		if hasAuth && user == requiredUser && password == requiredPassword {
+		sessionID := sessionIDCookie.Value
+		user, err := model.GetUserFromSessionID(sessionID)
+		if err != nil {
+			log.Fatal(err)
+			http.Error(w, err.Error(), 400)
+		}
+
+		if user != nil {
 			// Delegate request to the given handle
 			h(w, r, ps)
 		} else {

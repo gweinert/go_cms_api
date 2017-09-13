@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 	// "strings"
 
 	model "github.com/gweinert/cms_scratch/models"
@@ -42,7 +43,10 @@ func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	imageURL, err := googleCloudUpload(req)
+	bucketName := strings.Split(r.Host, ":")[0]
+	bucketName = strings.Join([]string{"garrett-react-cms", bucketName}, "-")
+
+	imageURL, err := googleCloudUpload(req, bucketName)
 	if err != nil {
 		fmt.Println("error uploading")
 		http.Error(w, err.Error(), 500)
@@ -85,10 +89,7 @@ func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Fprint(w, string(b))
 }
 
-func googleCloudUpload(r *uploadReq) (string, error) {
-
-	// Sets the name for the new bucket.
-	bucketName := "garrett-react-cms-test"
+func googleCloudUpload(r *uploadReq, bucketName string) (string, error) {
 
 	reg, _ := regexp.Compile("^data:image/(png|jpg|jpeg);base64,")
 	base64DataURI := reg.ReplaceAllString(r.DataURI, "")
@@ -124,7 +125,10 @@ func DeleteImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	_, err = googleCloudDelete(req.ImageURLs)
+	bucketName := strings.Split(r.Host, ":")[0]
+	bucketName = strings.Join([]string{"garrett-react-cms", bucketName}, "-")
+
+	_, err = googleCloudDelete(req.ImageURLs, bucketName)
 	if err != nil {
 		fmt.Println("error google cloud delete")
 		http.Error(w, err.Error(), 500)
@@ -154,9 +158,7 @@ func DeleteImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Fprint(w, string(b))
 }
 
-func googleCloudDelete(imageURLs []string) ([]string, error) {
-	// Sets the name for the new bucket.
-	bucketName := "garrett-react-cms-test"
+func googleCloudDelete(imageURLs []string, bucketName string) ([]string, error) {
 
 	imageURLs, err := services.GoogleCloudDelete(bucketName, imageURLs)
 	if err != nil {
