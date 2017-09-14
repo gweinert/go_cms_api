@@ -99,6 +99,8 @@ func Login(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		http.Error(w, "server Broke", 500)
 		return
 	}
+	cookie := http.Cookie{Name: "sessionId", Value: sessionID}
+	http.SetCookie(w, &cookie)
 
 	fmt.Fprint(w, string(b))
 
