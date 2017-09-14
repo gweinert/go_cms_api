@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 
 	"google.golang.org/api/option"
@@ -18,10 +19,12 @@ func GoogleCloudUpload(file io.Reader, bucketName string, fileName string) (stri
 	fmt.Println("google bucketname", bucketName)
 	ctx := context.Background()
 
-	// oauth := oauth2.ConfigFromJSON(os.Getenv("GOOGLE_CLOUD_KEYFILE_JSON"))
+	// oauthConfig := oauth2.ConfigFromJSON(os.Getenv("GOOGLE_CLOUD_KEYFILE_JSON"))
 	// Creates a client.
 	client, err := storage.NewClient(ctx,
-		option.WithServiceAccountFile("/Users/Garrett/Desktop/react-cms-e5dc3890c619.json"))
+		option.WithCredentialsFile(os.Getenv("GOOGLE_CREDENTIALS")),
+	)
+	// option.WithServiceAccountFile("/Users/Garrett/Desktop/react-cms-e5dc3890c619.json"))
 	// option.WithTokenSource(oauth.tokenSource))
 
 	if err != nil {
@@ -59,7 +62,10 @@ func GoogleCloudDelete(bucketName string, fileURLs []string) ([]string, error) {
 
 	// Creates a client.
 	client, err := storage.NewClient(ctx,
-		option.WithServiceAccountFile("/Users/Garrett/Desktop/react-cms-e5dc3890c619.json"))
+		option.WithCredentialsFile(os.Getenv("GOOGLE_CREDENTIALS")),
+		// option.WithServiceAccountFile("/Users/Garrett/Desktop/react-cms-e5dc3890c619.json"))
+
+	)
 	// option.WithTokenSource(os.Getenv("REACT_CMS_GOOGLE_CREDENTIALS1")))
 
 	if err != nil {
