@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gweinert/cms_scratch/controllers"
 	"github.com/gweinert/cms_scratch/models"
@@ -13,7 +14,16 @@ import (
 
 func main() {
 
-	models.InitDB("user=Garrett dbname=cms_scratch sslmode=disable")
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "user=Garrett dbname=cms_scratch sslmode=disable"
+	}
+	models.InitDB(dbURL)
 
 	router := httprouter.New()
 
@@ -46,6 +56,6 @@ func main() {
 		AllowCredentials: true,
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", c.Handler(router)))
+	log.Fatal(http.ListenAndServe(port, c.Handler(router)))
 
 }
