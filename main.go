@@ -38,8 +38,11 @@ func main() {
 	router.POST("/login", controllers.Login)
 	router.POST("/user/session", controllers.GetUserFromSessionID)
 
+	router.POST("/contact", controllers.SendContactMail)
+	router.POST("/contact/price-quote", controllers.SendBookingMail)
+
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:3001", "http://thetinytattooshop.com/"},
 		AllowCredentials: true,
 	})
 
