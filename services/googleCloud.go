@@ -8,8 +8,9 @@ import (
 	"net/url"
 	"strings"
 
-	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
+
+	"cloud.google.com/go/storage"
 )
 
 func GoogleCloudUpload(file io.Reader, bucketName string, fileName string) (string, error) {
@@ -17,9 +18,12 @@ func GoogleCloudUpload(file io.Reader, bucketName string, fileName string) (stri
 	fmt.Println("google bucketname", bucketName)
 	ctx := context.Background()
 
+	// oauth := oauth2.ConfigFromJSON(os.Getenv("GOOGLE_CLOUD_KEYFILE_JSON"))
 	// Creates a client.
 	client, err := storage.NewClient(ctx,
 		option.WithServiceAccountFile("/Users/Garrett/Desktop/react-cms-e5dc3890c619.json"))
+	// option.WithTokenSource(oauth.tokenSource))
+
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
@@ -56,6 +60,8 @@ func GoogleCloudDelete(bucketName string, fileURLs []string) ([]string, error) {
 	// Creates a client.
 	client, err := storage.NewClient(ctx,
 		option.WithServiceAccountFile("/Users/Garrett/Desktop/react-cms-e5dc3890c619.json"))
+	// option.WithTokenSource(os.Getenv("REACT_CMS_GOOGLE_CREDENTIALS1")))
+
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 		return nil, err
