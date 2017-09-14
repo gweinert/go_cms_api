@@ -56,6 +56,6 @@ func main() {
 		AllowCredentials: true,
 	})
 
-	log.Fatal(http.ListenAndServe(port, c.Handler(router)))
+	log.Fatal(http.ListenAndServe(":"+port, c.Handler(router)))
 
 }
