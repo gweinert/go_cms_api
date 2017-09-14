@@ -52,7 +52,7 @@ func main() {
 	router.POST("/contact/price-quote", controllers.SendBookingMail)
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:3001", "http://tiny.garrettdev.xyz", "http://thetinytattooshop.com/", "http://www.thetinytattooshop.com/"},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:3001", "http://tiny.garrettdev.xyz", "http://thetinytattooshop.com", "http://www.thetinytattooshop.com"},
 		AllowCredentials: true,
 	})
 
