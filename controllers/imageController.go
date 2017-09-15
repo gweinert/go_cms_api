@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	// "strings"
@@ -43,7 +44,21 @@ func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	bucketName := strings.Split(r.Host, ":")[0]
+	site, err := model.GetSiteFromPageId(req.PageID)
+	if err != nil {
+		fmt.Println("error getting site from pageid")
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	url, err := url.Parse(site.Domain)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	bucketName := strings.Split(url.Host, ".")[0]
+
+	// bucketName := strings.Split(r.Host, ":")[0]
 	bucketName = strings.Join([]string{"garrett-react-cms", bucketName}, "-")
 
 	imageURL, err := googleCloudUpload(req, bucketName)

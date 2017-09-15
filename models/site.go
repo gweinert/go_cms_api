@@ -113,6 +113,21 @@ func GetSiteByUserID(userID int) (*Site, error) {
 	return s, nil
 }
 
+func GetSiteFromPageId(pageID int) (*Site, error) {
+	s := new(Site)
+
+	err := db.QueryRow(`SELECT sites.id, domain, userid
+						FROM sites INNER JOIN pages on pages.siteid = sites.id
+						WHERE pages.id = $1`, pageID).Scan(&s.ID, &s.Domain, &s.UserID)
+	if err != nil {
+		fmt.Println("fail here")
+		log.Fatal(err)
+		return nil, err
+	}
+
+	return s, nil
+}
+
 // func addElementsToGroups(els []*Element, grps []*ElementGroup) ([]*ElementGroup, error) {
 // 	for _, g := range grps {
 // 		gels := make([]*Element, 0)
