@@ -129,6 +129,9 @@ func GetUserFromSessionID(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
+	user.PasswordHash = ""
+	user.PasswordSalt = ""
+
 	if user != nil {
 		loginRes.Success = 1
 		loginRes.User = user

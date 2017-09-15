@@ -12,8 +12,8 @@ type Page struct {
 	Path      string          `json:"path"`
 	ParentID  int             `json:"parentId"`
 	Name      string          `json:"name"`
-	ShowInNav bool            `json:"showInNav"`
 	SiteID    int             `json:"siteId"`
+	ShowInNav bool            `json:"showInNav"`
 	SortOrder int             `json:"sortOrder"`
 	Template  string          `json:"template"`
 	Elements  []*Element      `json:"elements"`
@@ -79,7 +79,9 @@ func CreateNewPage(p *Page) (*Page, error) {
 	var np = new(Page)
 	fmt.Printf("%v", p)
 	err := db.QueryRow(`INSERT INTO pages (title, path, parentid, name, siteid, showinnav, sortorder, template)
-	VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`, &p.Title, &p.Path, &p.ParentID, &p.Name, &p.SiteID, &p.ShowInNav, &p.SortOrder, &p.Template,
+						VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
+						RETURNING id, title, path, parentid, name, siteid, showinnav, sortorder, template`,
+		&p.Title, &p.Path, &p.ParentID, &p.Name, &p.SiteID, &p.ShowInNav, &p.SortOrder, &p.Template,
 	).Scan(&np.ID, &np.Title, &np.Path, &np.ParentID, &np.Name, &np.SiteID, &np.ShowInNav, &np.SortOrder, &np.Template)
 
 	if err != nil {
@@ -130,18 +132,17 @@ func SavePage(up *Page) (*Page, error) {
 //DeletePage delete page and all page elements and page groups related
 func DeletePage(id int) (int, int, int, error) {
 	var pageID int
-	var pageSortOrder int
+	var sortOrder int
 	var parentID int
 	// get page about to delete. find sort order of that element and page id and update all sort orders after it
 
-	err := db.QueryRow(`SELECT * from pages 
-						WHERE id = $1 
-						RETURNING pagesortorder, parentid`, id).Scan(&pageSortOrder, &parentID)
+	err := db.QueryRow(`SELECT sortorder, parentid from pages 
+						WHERE id = $1`, id).Scan(&sortOrder, &parentID)
 
 	err = db.QueryRow(`UPDATE pages
 						SET sortorder = sortorder - 1
 						WHERE parentid = $1 and sortorder > $2
-						RETURNING id`, parentID, pageSortOrder).Scan(&pageID)
+						RETURNING id`, parentID, sortOrder).Scan(&pageID)
 
 	err = db.QueryRow(`DELETE from pages
 						WHERE id = $1
@@ -151,13 +152,14 @@ func DeletePage(id int) (int, int, int, error) {
 		return 0, 0, 0, err
 	}
 
-	return pageID, pageSortOrder, parentID, nil
+	return pageID, sortOrder, parentID, nil
 }
 
 func UpdatePageSortOrder(id int, newIndex int) (int, error) {
 	var oldIndex int
+	var parentID int
 
-	err := db.QueryRow(`SELECT sortorder from pages WHERE id = $1`, id).Scan(&oldIndex)
+	err := db.QueryRow(`SELECT sortorder, parentid from pages WHERE id = $1`, id).Scan(&oldIndex, &parentID)
 	if err != nil {
 		fmt.Println("fail select query page sort order")
 		return 0, err
@@ -165,11 +167,11 @@ func UpdatePageSortOrder(id int, newIndex int) (int, error) {
 
 	db.QueryRow(`UPDATE pages
 				SET sortorder = $1
-				WHERE sortorder = $2`, oldIndex, newIndex)
+				WHERE sortorder = $2 AND parentid = $3`, oldIndex, newIndex, parentID)
 
 	db.QueryRow(`UPDATE pages
 				SET sortorder = $1
-				WHERE id = $2`, newIndex, id)
+				WHERE id = $2 AND parentid = $3`, newIndex, id, parentID)
 
 	return id, nil
 }

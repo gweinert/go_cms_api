@@ -60,7 +60,7 @@ func GetSiteByUserID(userID int) (*Site, error) {
 	s := new(Site)
 	pgs := make([]*Page, 0)
 
-	rows, err := db.Query(` SELECT * 
+	rows, err := db.Query(` SELECT sites.id, domain, userid, datetime, pages.id, title, path, parentid, name, siteid, showinnav, sortorder, template 
 							FROM sites INNER JOIN pages on sites.id = pages.siteid
 						   	WHERE userid = $1`, userID)
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,15 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 )
+
+func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	fmt.Fprint(w,
+		`<html>
+			<head>
+			<meta name="google-site-verification" content="DerT-WrX2FIdKwOrUnZRkMvtCojqa_j0xYfkviifmyQ" />
+			</head>
+		</html>`)
+}
 
 func main() {
 
@@ -27,6 +37,7 @@ func main() {
 
 	router := httprouter.New()
 
+	router.GET("/", Index)
 	router.GET("/site", controllers.ShowSiteDetailFunc)
 	router.GET("/site/:siteID", controllers.GetPages)
 	router.POST("/site/publish", controllers.BasicAuth(controllers.PublishSite))
