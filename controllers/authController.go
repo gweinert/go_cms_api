@@ -124,15 +124,13 @@ func GetUserFromSessionID(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	user, err := model.GetUserFromSessionID(req["id"])
 	if err != nil {
-		fmt.Println("error user")
 		http.Error(w, err.Error(), 400)
 		return
 	}
 
-	user.PasswordHash = ""
-	user.PasswordSalt = ""
-
 	if user != nil {
+		user.PasswordHash = ""
+		user.PasswordSalt = ""
 		loginRes.Success = 1
 		loginRes.User = user
 		loginRes.SessionID = req["id"]

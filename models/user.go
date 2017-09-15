@@ -80,13 +80,20 @@ func GetUserFromSessionID(sessionID string) (*User, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	for rows.Next() {
+	if rows.Next() {
+		// first row
 		if err := rows.Scan(&userID); err != nil {
 			log.Fatal(err)
+			return nil, err
 		}
+
+	} else {
+		// empty result
+		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
+		return nil, err
 	}
 
 	user, err := FindUserByID(userID)
